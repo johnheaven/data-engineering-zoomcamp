@@ -152,6 +152,7 @@ python ingest_data.py \
   --port=5432 \
   --db=ny_taxi \
   --table_name=yellow_taxi_trips \
+  --datecols=tpep_pickup_datetime,tpep_dropoff_datetime
   --url=${URL}
 ```
 
@@ -175,27 +176,32 @@ You can solve it with `.dockerignore`:
 * Create a file `.dockerignore` and add `data` there
 * Check [this video](https://www.youtube.com/watch?v=tOr4hTsHOzU&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb) (the middle) for more details 
 
-
-
 Run the script with Docker
 
 **Don't forget to change port as appropriate!**
 
 ```bash
 
-docker run -d \
+docker run -d --rm \
   --network=pg-network \
   taxi_ingest:v001 \
     --user=root \
     --password=root \
     --host=pg-database \
-    --port=5432 \
+    --port=5433 \
     --db=ny_taxi \
     --table_name=yellow_taxi_trips \
     --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
 ```
 
-### Docker-Compose 
+### Docker-Compose
+
+The options for ingesting data can be passed as environment variables. You can just include them before running the docker compose up command, on the the same line, e.g.:
+
+```bash
+PG_TABLE_NAME=green_taxi_trips DATA_URL=https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv docker compose up```
+
+... will ingest the data into the table `green_taxi_trips` and take the data from the specified URL.
 
 Run it:
 
@@ -206,31 +212,16 @@ docker-compose up
 Run in detached mode:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Shutting it down:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
-Note: to make pgAdmin configuration persistent, create a folder `data_pgadmin`. Change its permission via
-
-```bash
-sudo chown 5050:5050 data_pgadmin
-```
-
-and mount it to the `/var/lib/pgadmin` folder:
-
-```yaml
-services:
-  pgadmin:
-    image: dpage/pgadmin4
-    volumes:
-      - ./data_pgadmin:/var/lib/pgadmin
-    ...
-```
+Note: a Docker volume ensures the storage is persistent.
 
 
 ### SQL 
