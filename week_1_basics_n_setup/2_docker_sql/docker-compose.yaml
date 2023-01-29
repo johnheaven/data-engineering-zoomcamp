@@ -1,4 +1,18 @@
 services:
+
+  ingester:
+    build: .
+    depends_on:
+      - pgdatabase
+    environment:
+      - PG_USERNAME=root
+      - PG_PASSWORD=root
+      - PG_HOST=pgdatabase
+      - PG_PORT=5432
+      - PG_DB=ny_taxi
+      - PG_TABLE_NAME=${PG_TABLE_NAME:-yellow_taxi_trips}
+      - DATECOLS=${DATE_COLS:-"lpep_dropoff_datetime,lpep_pickup_datetime"}
+      - DATA_URL=${DATA_URL:-https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv}
   pgdatabase:
     image: postgres:13
     environment:
@@ -6,14 +20,20 @@ services:
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=ny_taxi
     volumes:
-      - "./ny_taxi_postgres_data:/var/lib/postgresql/data:rw"
+      - ny_taxi_postgres:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
   pgadmin:
     image: dpage/pgadmin4
+    depends_on:
+      - pgdatabase
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@admin.com
       - PGADMIN_DEFAULT_PASSWORD=root
     ports:
       - "8080:80"
-    
+    volumes:
+      - ny_taxi_psql_admin:/var/lib/pgadmin
+volumes:
+  ny_taxi_postgres:
+  ny_taxi_psql_admin:
