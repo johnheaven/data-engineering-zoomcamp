@@ -221,9 +221,91 @@ Shutting it down:
 docker compose down
 ```
 
-Note: a Docker volume ensures the storage is persistent.
+A Docker volume is specified in `docker-compose.yml` to ensure the storage is persistent (so you don't have to re-ingest data every time, or re-enter connection settings in pgadmin every time you restart the containers).
 
+## SQL -> Homework for week 1
 
-### SQL 
+#### Question 1: docker help
 
-Coming soon!
+```
+docker help build
+```
+
+#### Question 2. Understanding Docker first run
+
+Build the image:
+
+```bash
+docker build . --tag data-ingester
+```
+
+I changed my Dockerfile a little, so the following works for me:
+
+```bash
+docker run --rm data-ingester -m pip list --not-required
+```
+
+#### Question 3. Count records
+
+```SQL
+SELECT
+COUNT(*)
+FROM green_taxi_trips
+WHERE
+	lpep_pickup_datetime::timestamp >= '2019-01-15'::timestamp
+	AND
+	lpep_dropoff_datetime::timestamp < '2019-01-16'::timestamp
+```
+
+#### Question 4. Largest trip for each day
+
+```SELECT
+	lpep_pickup_datetime::date as pickup_date,
+	MAX(trip_distance)
+FROM
+	green_taxi_trips
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 1
+```
+
+#### Question 5. Number of passengers
+
+```SQL
+SELECT COUNT(*) FROM
+	(SELECT
+		lpep_pickup_datetime::timestamp AS pickup,
+	 	passenger_count
+	FROM
+		green_taxi_trips) sub
+WHERE
+	pickup >= '2019-01-01'::timestamp
+	AND 
+	pickup < '2019-01-02'::timestamp
+	AND
+	passenger_count = 3
+
+```
+#### Question 6. Largest tip
+
+```SQL
+SELECT
+	green_zone_lookup."Zone" AS do_zone,
+	MAX(tip_amount) AS highest_tip
+FROM
+(SELECT * FROM green_taxi_trips
+JOIN
+	green_zone_lookup
+	ON
+	"PULocationID" = green_zone_lookup."LocationID"
+WHERE
+ 	green_zone_lookup."Zone" = 'Astoria'
+) sub
+JOIN
+	green_zone_lookup
+	ON
+	"DOLocationID" = green_zone_lookup."LocationID"
+GROUP BY
+	do_zone
+ORDER BY highest_tip DESC
+```
